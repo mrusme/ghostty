@@ -2352,6 +2352,9 @@ keybind: Keybinds = .{},
 /// If `true`, the bold text will use the bright color palette.
 @"bold-is-bright": bool = false,
 
+/// If `true`, the bold text will have a _glowing_ background.
+@"bold-is-glow": bool = false,
+
 /// This will be used to set the `TERM` environment variable.
 /// HACK: We set this with an `xterm` prefix because vim uses that to enable key
 /// protocols (specifically this will enable `modifyOtherKeys`), among other

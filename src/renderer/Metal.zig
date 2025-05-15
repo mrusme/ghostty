@@ -495,6 +495,7 @@ pub const DerivedConfig = struct {
             .foreground = config.foreground.toTerminalRGB(),
             .invert_selection_fg_bg = config.@"selection-invert-fg-bg",
             .bold_is_bright = config.@"bold-is-bright",
+            .bold_is_glow = config.@"bold-is-glow",
             .min_contrast = @floatCast(config.@"minimum-contrast"),
             .padding_color = config.@"window-padding-color",
 
@@ -2638,7 +2639,7 @@ fn rebuildCells(
             else
                 false;
 
-            const bg_style = style.bg(cell, color_palette);
+            const bg_style = style.bg(cell, color_palette, self.config.bold_is_glow);
             const fg_style = style.fg(color_palette, self.config.bold_is_bright) orelse self.foreground_color orelse self.default_foreground_color;
 
             // The final background color for the cell.

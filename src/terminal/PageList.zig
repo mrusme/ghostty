@@ -3370,7 +3370,7 @@ pub const Pin = struct {
                 // If it is a background color cell, we check the color.
                 .bg_color_palette, .bg_color_rgb => {
                     const s = self.style(cell);
-                    const bg = s.bg(cell, palette) orelse return true;
+                    const bg = s.bg(cell, palette, false) orelse return true;
                     if (bg.eql(default_background)) return true;
                 },
 
@@ -3395,7 +3395,7 @@ pub const Pin = struct {
                     // on the style or the explicitly set background
                     // matches our default background.
                     const s = self.style(cell);
-                    const bg = s.bg(cell, palette) orelse return true;
+                    const bg = s.bg(cell, palette, false) orelse return true;
                     if (bg.eql(default_background)) return true;
                 },
             }
