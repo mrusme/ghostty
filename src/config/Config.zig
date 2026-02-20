@@ -3637,6 +3637,13 @@ else
 /// Available since Ghostty 1.2.0.
 @"bold-color": ?BoldColor = null,
 
+/// If `true`, bold text will be rendered with a _glowing_ background
+/// instead of a bold font. The glow effect is achieved by using a
+/// dimmed version of the foreground color as the background, making
+/// the text appear to glow. No bold font weight is used when this
+/// is enabled.
+@"bold-is-glow": bool = false,
+
 /// The opacity level (opposite of transparency) of the faint text. A value of
 /// 1 is fully opaque and a value of 0 is fully transparent. A value less than 0
 /// or greater than 1 will be clamped to the nearest valid value.

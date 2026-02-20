@@ -420,6 +420,11 @@ pub const RGB = packed struct(u24) {
         return self.r == other.r and self.g == other.g and self.b == other.b;
     }
 
+    /// Returns a dimmed version of the color at 25% intensity.
+    pub fn dim(self: RGB) RGB {
+        return .{ .r = self.r / 4, .g = self.g / 4, .b = self.b / 4 };
+    }
+
     /// Calculates the contrast ratio between two colors. The contrast
     /// ration is a value between 1 and 21 where 1 is the lowest contrast
     /// and 21 is the highest contrast.

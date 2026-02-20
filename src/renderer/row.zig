@@ -28,7 +28,7 @@ pub fn neverExtendBg(
             // If it is a background color cell, we check the color.
             .bg_color_palette, .bg_color_rgb => {
                 const s: terminal.Style = if (cell.hasStyling()) styles[x] else .{};
-                const bg = s.bg(cell, palette) orelse return true;
+                const bg = s.bg(cell, palette, null) orelse return true;
                 if (bg.eql(default_background)) return true;
             },
 
@@ -53,7 +53,7 @@ pub fn neverExtendBg(
                 // on the style or the explicitly set background
                 // matches our default background.
                 const s: terminal.Style = if (cell.hasStyling()) styles[x] else .{};
-                const bg = s.bg(cell, palette) orelse return true;
+                const bg = s.bg(cell, palette, null) orelse return true;
                 if (bg.eql(default_background)) return true;
             },
         }
