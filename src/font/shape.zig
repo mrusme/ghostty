@@ -84,6 +84,11 @@ pub const RunOptions = struct {
     /// null.
     cursor_x: ?usize = null,
 
+    /// If true, the bold flag never selects a bold font face. This is set
+    /// by `bold-is-glow`, which renders bold text as a glowing background
+    /// on the regular weight instead of a heavier face.
+    bold_is_glow: bool = false,
+
     /// Apply the font break configuration to the run.
     pub fn applyBreakConfig(
         self: *RunOptions,

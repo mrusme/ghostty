@@ -2071,6 +2071,70 @@ test "shape cell attribute change" {
     }
 }
 
+test "shape bold with bold_is_glow uses the regular face" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var testdata = try testShaperWithStyles(alloc);
+    defer testdata.deinit();
+
+    var t = try terminal.Terminal.init(io, alloc, .{ .cols = 10, .rows = 3 });
+    defer t.deinit(alloc);
+
+    var s = t.vtStream();
+    defer s.deinit();
+    s.nextSlice("\x1b[1mA");
+    s.nextSlice("\x1b[1;3mB");
+
+    var state: terminal.RenderState = .empty;
+    defer state.deinit(alloc);
+    try state.update(alloc, &t);
+
+    // Without the option, bold and bold italic select their own faces.
+    {
+        var shaper = &testdata.shaper;
+        var it = shaper.runIterator(.{
+            .grid = testdata.grid,
+            .cells = state.row_data.get(0).cells.slice(),
+        });
+
+        var styles: [2]font.Style = undefined;
+        var count: usize = 0;
+        while (try it.next(alloc)) |run| : (count += 1) {
+            try testing.expect(count < styles.len);
+            styles[count] = run.font_index.style;
+            _ = try shaper.shape(run);
+        }
+
+        try testing.expectEqual(@as(usize, 2), count);
+        try testing.expectEqual(font.Style.bold, styles[0]);
+        try testing.expectEqual(font.Style.bold_italic, styles[1]);
+    }
+
+    // With the option, bold falls back to regular and bold italic to italic.
+    {
+        var shaper = &testdata.shaper;
+        var it = shaper.runIterator(.{
+            .grid = testdata.grid,
+            .cells = state.row_data.get(0).cells.slice(),
+            .bold_is_glow = true,
+        });
+
+        var styles: [2]font.Style = undefined;
+        var count: usize = 0;
+        while (try it.next(alloc)) |run| : (count += 1) {
+            try testing.expect(count < styles.len);
+            styles[count] = run.font_index.style;
+            _ = try shaper.shape(run);
+        }
+
+        try testing.expectEqual(@as(usize, 2), count);
+        try testing.expectEqual(font.Style.regular, styles[0]);
+        try testing.expectEqual(font.Style.italic, styles[1]);
+    }
+}
+
 const TestShaper = struct {
     alloc: Allocator,
     shaper: Shaper,
@@ -2170,6 +2234,48 @@ fn testShaperWithFont(alloc: Allocator, font_req: TestFont) !TestShaper {
         // Some of our tests rely on dlig being enabled by default
         .features = &.{"dlig"},
     });
+    errdefer shaper.deinit();
+
+    return TestShaper{
+        .alloc = alloc,
+        .shaper = shaper,
+        .grid = grid_ptr,
+        .lib = lib,
+    };
+}
+
+/// Helper to return a shaper whose collection has a real face for every
+/// style, which is required to tell the resolved styles apart.
+fn testShaperWithStyles(alloc: Allocator) !TestShaper {
+    var lib = try Library.init(alloc);
+    errdefer lib.deinit();
+
+    var c = Collection.init();
+    c.load_options = .{ .library = lib };
+
+    inline for (.{
+        .{ font.embedded.regular, font.Style.regular },
+        .{ font.embedded.bold, font.Style.bold },
+        .{ font.embedded.italic, font.Style.italic },
+        .{ font.embedded.bold_italic, font.Style.bold_italic },
+    }) |entry| {
+        _ = try c.add(alloc, try .init(
+            lib,
+            entry[0],
+            .{ .size = .{ .points = 12 } },
+        ), .{
+            .style = entry[1],
+            .fallback = false,
+            .size_adjustment = .none,
+        });
+    }
+
+    const grid_ptr = try alloc.create(SharedGrid);
+    errdefer alloc.destroy(grid_ptr);
+    grid_ptr.* = try .init(alloc, .{ .collection = c });
+    errdefer grid_ptr.*.deinit(alloc);
+
+    var shaper = try Shaper.init(alloc, .{});
     errdefer shaper.deinit();
 
     return TestShaper{

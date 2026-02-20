@@ -562,6 +562,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
             search_selected_background: configpkg.Config.TerminalColor,
             search_selected_foreground: configpkg.Config.TerminalColor,
             bold_color: ?terminal.Style.BoldColor,
+            bold_is_glow: bool,
             faint_opacity: u8,
             min_contrast: f32,
             padding_color: configpkg.WindowPaddingColor,
@@ -627,6 +628,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                     .background = config.background.toTerminalRGB(),
                     .foreground = config.foreground.toTerminalRGB(),
                     .bold_color = if (config.@"bold-color") |b| b.toTerminal() else null,
+                    .bold_is_glow = config.@"bold-is-glow",
                     .faint_opacity = @intFromFloat(@ceil(config.@"faint-opacity" * 255)),
 
                     .min_contrast = @floatCast(config.@"minimum-contrast"),
@@ -2496,6 +2498,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                             const bg_style = cursor_style.bg(
                                 &state.cursor.cell,
                                 &state.colors.palette,
+                                null,
                             ) orelse state.colors.background;
 
                             break :cursor_color switch (tag) {
@@ -2557,6 +2560,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                         const bg_style = cursor_style.bg(
                             &state.cursor.cell,
                             &state.colors.palette,
+                            null,
                         ) orelse state.colors.background;
 
                         break :blk switch (txt) {
@@ -2673,6 +2677,8 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                     if (vp.y != y) break :cursor_x null;
                     break :cursor_x vp.x;
                 },
+
+                .bold_is_glow = self.config.bold_is_glow,
             };
             run_iter_opts.applyBreakConfig(self.config.font_shaping_break);
             var run_iter = self.font_shaper.runIterator(run_iter_opts);
@@ -2793,15 +2799,18 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
                 // The `_style` suffixed values are the colors based on
                 // the cell style (SGR), before applying any additional
                 // configuration, inversions, selections, etc.
-                const bg_style = style.bg(
-                    cell,
-                    &state.colors.palette,
-                );
                 const fg_style = style.fg(.{
                     .default = state.colors.foreground,
                     .palette = &state.colors.palette,
                     .bold = self.config.bold_color,
                 });
+                const bold_glow_bg: ?terminal.color.RGB =
+                    if (self.config.bold_is_glow and style.flags.bold) fg_style.dim() else null;
+                const bg_style = style.bg(
+                    cell,
+                    &state.colors.palette,
+                    bold_glow_bg,
+                );
 
                 // The final background color for the cell.
                 const bg = switch (selected) {
