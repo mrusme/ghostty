@@ -129,6 +129,7 @@ pub const Style = struct {
         self: Style,
         cell: *const page.Cell,
         palette: *const color.Palette,
+        bold_glow_bg: ?color.RGB,
     ) ?color.RGB {
         return switch (cell.content_tag) {
             .bg_color_palette => palette[cell.content.color_palette.data],
@@ -138,7 +139,7 @@ pub const Style = struct {
             },
 
             else => switch (self.bg_color) {
-                .none => null,
+                .none => bold_glow_bg,
                 .palette => |idx| palette[idx],
                 .rgb => |rgb| rgb,
             },

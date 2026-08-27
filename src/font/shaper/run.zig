@@ -149,7 +149,9 @@ pub const RunIterator = struct {
             // Text runs break when font styles change so we need to get
             // the proper style.
             const font_style: font.Style = style: {
-                if (style.flags.bold) {
+                // With `bold-is-glow` the bold flag is drawn as a background
+                // glow, so it must not pull in a bold face.
+                if (style.flags.bold and !self.opts.bold_is_glow) {
                     if (style.flags.italic) break :style .bold_italic;
                     break :style .bold;
                 }
